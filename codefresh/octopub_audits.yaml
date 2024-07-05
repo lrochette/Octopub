@@ -30,7 +30,7 @@ steps:
   build_image:
     title: "Building Java container"
     type: build
-    registry: docker
+    registry: dockerhub
     image_name: "aperturesci/octopub-audit-microservice-mysql"
     working_directory: "${{clone}}/java/audit-microservice"
     tags:
