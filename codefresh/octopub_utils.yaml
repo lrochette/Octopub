@@ -1,0 +1,38 @@
+version: "1.0"
+stages:
+  - "init"
+  - "clone"
+  - "build"
+  - "test"
+
+steps:
+  increment:
+    title: Increment  Build Number
+    image: codefresh/cli
+    stage: init
+    commands:
+      - |
+        BUILD_NUMBER=$(codefresh get annotation pipeline ${{CF_PIPELINE_NAME}} BUILD_NUMBER -o json | jq -r '.value' )
+        cf_export BUILD_NUMBER=$BUILD_NUMBER
+        codefresh create annotation pipeline ${{CF_PIPELINE_NAME}} BUILD_NUMBER=$(($BUILD_NUMBER+1))
+  clone:
+    title: "Cloning repository"
+    type: "git-clone"
+    repo: "${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}"
+    revision: "${{CF_BRANCH}}"
+    git: "github-lr"
+    stage: "clone"
+
+  setVersionNumber:
+    image: ubuntu:latest
+    commands:
+        - cf_export VERSION=$(date +'%Y.%m.%d')-${{BUILD_NUMBER}}
+    stage: "clone"
+
+  java_build_audit:
+    title: build audit
+    image: maven:3.3-jdk-8
+    working_directory: "${{clone}}/java/microservice-utils"
+    commands:
+      - mvn -Dmaven.repo.local=/codefresh/volume/m2_repository package
+    stage: build
