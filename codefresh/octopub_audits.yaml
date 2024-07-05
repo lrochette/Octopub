@@ -1,0 +1,48 @@
+version: "1.0"
+stages:
+  - "clone"
+  - "build"
+  - "test"
+
+steps:
+  clone:
+    title: "Cloning repository"
+    type: "git-clone"
+    repo: "${{CF_REPO_ORG}}/${{CF_REPO_NAME}}"
+    revision: "${{CF_BRANCH}}"
+    git: "github"
+    stage: "clone"
+
+  setVersionNumber:
+    image: ubuntu:latest
+    commands:
+        - cf_export VERSION=$(date +'%Y.%m.%d')-${{BUILD_NUMBER}}
+    stage: "clone"
+
+  java_build_audit:
+    title: build audit
+    image: maven:3.3-jdk-8
+    working_directory: "${{clone}}/java/audit-microservice"
+    commands:
+      - mvn -Dmaven.repo.local=/codefresh/volume/m2_repository package
+    stage: build
+
+  build_image:
+    title: "Building Java container"
+    type: build
+    registry: docker
+    image_name: "aperturesci/octopub-audit-microservice-mysql"
+    working_directory: "${{clone}}/java/audit-microservice"
+    tags:
+      - "${{CF_BRANCH_TAG_NORMALIZED}}"
+      - ${{VERSION}}
+    dockerfile: "Dockerfile"
+    disable_push: false
+    stage: build
+    on_success:
+      annotations:
+        set:
+          - annotations:
+            - sha: ${{CF_SHORT_REVISION}}
+            - version: ${{VERSION}}
+            display: version
