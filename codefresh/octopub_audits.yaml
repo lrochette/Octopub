@@ -10,7 +10,7 @@ steps:
     type: "git-clone"
     repo: "${{CF_REPO_ORG}}/${{CF_REPO_NAME}}"
     revision: "${{CF_BRANCH}}"
-    git: "github"
+    git: "github-lr"
     stage: "clone"
 
   setVersionNumber:
